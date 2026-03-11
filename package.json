@@ -1,6 +1,7 @@
 {
   "name": "rocket-alert-proxy",
   "version": "1.0.0",
+  "description": "Red Alert system with WhatsApp and Web UI",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
@@ -10,6 +11,10 @@
     "cors": "^2.8.5",
     "express": "^4.18.2",
     "whatsapp-web.js": "^1.23.0",
-    "qrcode-terminal": "^0.12.0"
+    "qrcode-terminal": "^0.12.0",
+    "path": "^0.12.7"
+  },
+  "engines": {
+    "node": ">=16.0.0"
   }
 }
