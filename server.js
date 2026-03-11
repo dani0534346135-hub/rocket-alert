@@ -13,8 +13,17 @@ const client = new Client({
     authStrategy: new LocalAuth(),
     puppeteer: {
         headless: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox'],
-        executablePath: '/usr/bin/google-chrome-stable' // מוסיף את הנתיב לדפדפן בשרת
+        args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage', // חשוב מאוד לשרתים עם מעט זיכרון
+            '--disable-accelerated-2d-canvas',
+            '--no-first-run',
+            '--no-zygote',
+            '--single-process' // עוזר לחסוך בזיכרון
+        ],
+        // ב-Render, נתיב הכרום הוא בדרך כלל כאן:
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/google-chrome-stable'
     }
 });
 
