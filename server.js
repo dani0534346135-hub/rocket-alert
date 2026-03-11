@@ -20,10 +20,8 @@ const client = new Client({
             '--disable-dev-shm-usage',
             '--single-process'
         ],
-        // פונקציה שמוצאת את הקובץ בתוך התיקייה בלי קשר למספר הגרסה
-        executablePath: fs.readdirSync('/opt/render/.cache/puppeteer/chrome')
-            .map(dir => path.join('/opt/render/.cache/puppeteer/chrome', dir, 'chrome-linux64/chrome'))
-            .find(p => fs.existsSync(p)) || undefined
+        // הנתיב המקומי החדש בתוך הפרויקט
+        executablePath: path.join(__dirname, '.cache', 'puppeteer', 'chrome', 'linux-127.0.6533.88', 'chrome-linux64', 'chrome')
     }
 });
 
