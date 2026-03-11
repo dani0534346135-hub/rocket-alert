@@ -11,9 +11,7 @@ app.use(cors());
 
 // --- פונקציה למציאת נתיב הכרום ב-Render ---
 function getChromePath() {
-    // נתיב סטנדרטי בלינוקס
     if (fs.existsSync('/usr/bin/google-chrome-stable')) return '/usr/bin/google-chrome-stable';
-    // נתיב נפוץ ב-Render לאחר התקנת puppeteer
     const renderChrome = '/opt/render/.cache/puppeteer/chrome/linux-146.0.7680.66/chrome-linux64/chrome';
     if (fs.existsSync(renderChrome)) return renderChrome;
     return null;
@@ -24,13 +22,8 @@ const client = new Client({
     authStrategy: new LocalAuth(),
     puppeteer: {
         headless: true,
-        args: [
-            '--no-sandbox', 
-            '--disable-setuid-sandbox', 
-            '--disable-dev-shm-usage',
-            '--single-process'
-        ],
-        executablePath: getChromePath() || undefined // הוא ינסה למצוא לבד אם הפונקציה נכשלה
+        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--single-process'],
+        executablePath: getChromePath() || undefined
     }
 });
 
@@ -47,7 +40,7 @@ client.initialize();
 
 // --- הגדרות אישיות ---
 const MY_CITY = "בת ים"; 
-const MY_NUMBER = "972501234567@c.us"; // <<< וודא שהמספר שלך כאן תקין
+const MY_NUMBER = "972501234567@c.us"; // <<< וודא שהמספר שלך כאן תקין (972...)
 let lastAlertId = "";
 
 async function sendWhatsappAlert(title, city) {
@@ -83,9 +76,13 @@ async function backgroundScanner() {
     } catch (error) {}
 }
 
+// סריקה כל 3 שניות
 setInterval(backgroundScanner, 3000);
 
-app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'index.html')); });
+// --- נתיבים (Routes) ---
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
 
 app.get('/cities', async (req, res) => {
     try {
@@ -101,42 +98,6 @@ app.get('/alerts', async (req, res) => {
     } catch (error) { res.status(500).send(error); }
 });
 
-const PORT = process.env.PORT || 10000; // Render מעדיף פורט 10000
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));            }
-        }
-    } catch (error) {
-        // התעלמות משגיאות רשת זמניות
-    }
-}
-
-setInterval(backgroundScanner, 3000);
-
-// --- נתיבים (Routes) ---
-
-// מציג את דף הבית (index.html) כשנכנסים לכתובת של Render
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
-});
-
-// מספק את רשימת הערים ל-HTML
-app.get('/cities', async (req, res) => {
-    try {
-        const response = await axios.get('https://www.oref.org.il/Shared/Ajax/GetCities.aspx', {
-            headers: { 'Referer': 'https://www.oref.org.il/' }
-        });
-        res.json(response.data);
-    } catch (error) { res.status(500).send(error); }
-});
-
-// מספק את ההתרעות ל-HTML
-app.get('/alerts', async (req, res) => {
-    try {
-        const response = await axios.get('https://www.oref.org.il/WarningMessages/History/AlertsHistory.json', {
-            headers: { 'Referer': 'https://www.oref.org.il/' }
-        });
-        res.json(response.data);
-    } catch (error) { res.status(500).send(error); }
-});
-
-const PORT = process.env.PORT || 3000;
+// שימוש בפורט 10000 עבור Render
+const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
