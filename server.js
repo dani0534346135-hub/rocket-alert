@@ -12,44 +12,45 @@ const client = new Client({
     authStrategy: new LocalAuth(),
     puppeteer: {
         headless: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox'] // הגדרות חובה להרצה בענן
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
     }
 });
 
 client.on('qr', (qr) => {
-    // את ה-QR הזה תראה ב-Logs של Render/המחשב
     qrcode.generate(qr, { small: true });
-    console.log('סרוק את הקוד כדי לחבר את הוואטסאפ!');
+    console.log('סרוק את הקוד ב-Logs כדי לחבר את הוואטסאפ!');
 });
 
 client.on('ready', () => {
-    console.log('הוואטסאפ מחובר ומוכן לשלוח הודעות!');
+    console.log('הוואטסאפ מחובר! המערכת סורקת התרעות ברקע...');
 });
 
 client.initialize();
 
-// פונקציית עזר לשליחת הודעה
-async function sendWhatsappAlert(title, cities) {
-    const myNumber = "972501234567@c.us"; // <<< שנה למספר שלך (פורמט: מדינה ללא 0 בהתחלה)
-    let message = "";
+// --- הגדרות מעקב ---
+const MY_CITY = "בת ים"; // שנה לעיר שאתה רוצה לעקוב אחריה
+const MY_NUMBER = "972501234567@c.us"; // שנה למספר שלך (מדינה + מספר בלי 0)
+let lastAlertId = ""; // מונע שליחת הודעות כפולות על אותה אזעקה
 
+// פונקציה לשליחת וואטסאפ
+async function sendWhatsappAlert(title, city) {
+    let message = "";
     if (title.includes("טילים") || title.includes("רקטות")) {
-        message = `🚨 *אזעקת טילים!* \nערים: ${cities}\nחובה להיכנס למקלט מיד. 🏃💨`;
+        message = `🚨 *אזעקת טילים ב${city}!* \nחובה להיכנס למקלט מיד. 🏃💨`;
     } else {
-        message = `⚠️ *התרעת שברי טילים/כטב"ם* \nערים: ${cities}\nניתן להישאר בבית, להתרחק מחלונות. 🏠🛡️`;
+        message = `⚠️ *התרעת שברי טילים ב${city}* \nניתן להישאר בבית, להתרחק מחלונות. 🏠🛡️`;
     }
 
     try {
-        await client.sendMessage(myNumber, message);
-        console.log("הודעת וואטסאפ נשלחה!");
+        await client.sendMessage(MY_NUMBER, message);
+        console.log(`הודעה נשלחה בהצלחה ל-${MY_NUMBER}`);
     } catch (err) {
-        console.error("שגיאה בשליחת וואטסאפ:", err);
+        console.error("שגיאה בשליחת הודעה:", err);
     }
 }
 
-// --- נתיבי API ---
-
-app.get('/alerts', async (req, res) => {
+// --- מנוע הסריקה האוטומטי (רץ כל 3 שניות) ---
+async function backgroundScanner() {
     try {
         const response = await axios.get('https://www.oref.org.il/WarningMessages/History/AlertsHistory.json', {
             headers: {
@@ -59,18 +60,31 @@ app.get('/alerts', async (req, res) => {
         });
 
         const data = response.data;
-
-        // בדיקה אוטומטית בשרת: אם יש התרעה בבת ים, שלח וואטסאפ מיד
         if (data && data.length > 0) {
             const latest = data[0];
-            const myCity = "בת ים"; // העיר שאתה רוצה לקבל עליה הודעה
             
-            if (latest.data.includes(myCity)) {
-                sendWhatsappAlert(latest.title, myCity);
+            // בודק אם זו התרעה חדשה (לפי ה-ID) ואם היא בעיר שלי
+            if (latest.id !== lastAlertId && latest.data.includes(MY_CITY)) {
+                lastAlertId = latest.id; // מעדכן שטיפלנו בהתרעה הזו
+                await sendWhatsappAlert(latest.title, MY_CITY);
             }
         }
+    } catch (error) {
+        // בדרך כלל שגיאות התחברות זמניות, אין צורך להפסיק את השרת
+        console.log("סורק נתונים...");
+    }
+}
 
-        res.json(data);
+// הפעלת הסורק כל 3 שניות
+setInterval(backgroundScanner, 3000);
+
+// --- נתיבי API (בשביל אתר ה-HTML שלך) ---
+app.get('/alerts', async (req, res) => {
+    try {
+        const response = await axios.get('https://www.oref.org.il/WarningMessages/History/AlertsHistory.json', {
+            headers: { 'Referer': 'https://www.oref.org.il/' }
+        });
+        res.json(response.data);
     } catch (error) {
         res.status(500).json({ error: "שגיאה במשיכת התרעות" });
     }
@@ -88,4 +102,4 @@ app.get('/cities', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`Server is live on port ${PORT}`));
