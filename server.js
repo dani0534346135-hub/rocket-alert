@@ -13,8 +13,8 @@ const client = new Client({
     authStrategy: new LocalAuth(),
     puppeteer: {
         headless: true,
-        // הוספנו פקודה שמוצאת את הדפדפן אוטומטית בשרת
-        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+        // כאן אנחנו מוחקים את הנתיב הידני ונותנים לו לחפש לבד
     }
 });
 client.on('qr', (qr) => {
