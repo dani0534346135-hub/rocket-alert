@@ -13,16 +13,10 @@ const client = new Client({
     authStrategy: new LocalAuth(),
     puppeteer: {
         headless: true,
-        args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage'
-        ],
-        // הנתיב המדויק שמופיע בלוגים שלך
-        executablePath: '/opt/render/.cache/puppeteer/chrome/linux-146.0.7680.66/chrome-linux64/chrome'
+        // הוספנו פקודה שמוצאת את הדפדפן אוטומטית בשרת
+        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
     }
 });
-
 client.on('qr', (qr) => {
     console.log('--- סרוק את קוד ה-QR למטה ---');
     qrcode.generate(qr, { small: true });
