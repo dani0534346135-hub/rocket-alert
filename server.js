@@ -9,21 +9,14 @@ const fs = require('fs');
 const app = express();
 app.use(cors());
 
-// --- פונקציה למציאת נתיב הכרום ב-Render ---
-function getChromePath() {
-    if (fs.existsSync('/usr/bin/google-chrome-stable')) return '/usr/bin/google-chrome-stable';
-    const renderChrome = '/opt/render/.cache/puppeteer/chrome/linux-146.0.7680.66/chrome-linux64/chrome';
-    if (fs.existsSync(renderChrome)) return renderChrome;
-    return null;
-}
-
-// --- הגדרות וואטסאפ ---
+// --- הגדרות וואטסאפ עם הנתיב המדויק מהלוגים שלך ---
 const client = new Client({
     authStrategy: new LocalAuth(),
     puppeteer: {
         headless: true,
         args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--single-process'],
-        executablePath: getChromePath() || undefined
+        // זה הנתיב שהופיע בלוג שלך - אנחנו מכניסים אותו ישירות
+        executablePath: '/opt/render/.cache/puppeteer/chrome/linux-146.0.7680.66/chrome-linux64/chrome'
     }
 });
 
@@ -40,7 +33,7 @@ client.initialize();
 
 // --- הגדרות אישיות ---
 const MY_CITY = "בת ים"; 
-const MY_NUMBER = "972501234567@c.us"; // <<< וודא שהמספר שלך כאן תקין (972...)
+const MY_NUMBER = "972501234567@c.us"; // <<< וודא שהמספר שלך כאן תקין
 let lastAlertId = "";
 
 async function sendWhatsappAlert(title, city) {
@@ -76,13 +69,9 @@ async function backgroundScanner() {
     } catch (error) {}
 }
 
-// סריקה כל 3 שניות
 setInterval(backgroundScanner, 3000);
 
-// --- נתיבים (Routes) ---
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
-});
+app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'index.html')); });
 
 app.get('/cities', async (req, res) => {
     try {
@@ -98,6 +87,5 @@ app.get('/alerts', async (req, res) => {
     } catch (error) { res.status(500).send(error); }
 });
 
-// שימוש בפורט 10000 עבור Render
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
